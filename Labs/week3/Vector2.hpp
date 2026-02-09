@@ -15,7 +15,9 @@ public:
 	Vector2()
 		:x_(0), y_(0)
 	{
-		// YOUR CODE HERE
+		x_ = 0;
+		y_ = 0;
+
 	}
 
 	// This constructor can be used to set the x, y and z components of a vector when it
@@ -24,7 +26,8 @@ public:
 	Vector2(float x, float y)
 		:x_(x), y_(y)
 	{
-		// YOUR CODE HERE
+		x_ = x;
+		x_ = y;
 	}
 
 	// Implement this method to add two vectors.
@@ -108,6 +111,10 @@ public:
 
 	const float cross(const Vector2& other)
 	{
+
+		float crossVal = (x_ * other.y_) - (y_ * other.x_);
+		return crossVal;
+
 		// YOUR CODE HERE
 		// Implement the cross product, following the formula from the slides.
 		// Note of course the cross product isn't actually defined for 2D vectors!
@@ -118,6 +125,10 @@ public:
 
 	const float dot(const Vector2& other)
 	{
+
+		float dotVal = (x_ * other.x_) + (y_ * other.y_);
+		return dotVal;
+
 		// YOUR CODE HERE
 		// Implement the dot product, following the formula from the slides.
 	}
