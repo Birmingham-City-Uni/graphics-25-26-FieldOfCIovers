@@ -13,10 +13,10 @@ public:
 	// Change this to set the x, y and z components of the vector to all be zero.
 	// You can use an initialiser list, or set them in the constructor function's body.
 	Vector2()
-		:x_(0), y_(0)
+		:x_(0.0f), y_(0.0f)
 	{
-		x_ = 0;
-		y_ = 0;
+		x_ = 0.0f;
+		y_ = 0.0f;
 
 	}
 
@@ -27,7 +27,7 @@ public:
 		:x_(x), y_(y)
 	{
 		x_ = x;
-		x_ = y;
+		y_ = y;
 	}
 
 	// Implement this method to add two vectors.
@@ -112,7 +112,7 @@ public:
 	const float cross(const Vector2& other)
 	{
 
-		float crossVal = (x_ * other.y_) - (y_ * other.x_);
+		float crossVal = x_ * other.y_ - y_ * other.x_;
 		return crossVal;
 
 		// YOUR CODE HERE
@@ -126,7 +126,7 @@ public:
 	const float dot(const Vector2& other)
 	{
 
-		float dotVal = (x_ * other.x_) + (y_ * other.y_);
+		float dotVal = x_ * other.x_ + y_ * other.y_;
 		return dotVal;
 
 		// YOUR CODE HERE
