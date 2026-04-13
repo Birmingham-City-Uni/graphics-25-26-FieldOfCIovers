@@ -115,6 +115,9 @@ void drawMesh(std::vector<unsigned char>& image, const Mesh& mesh,
 		// The matrix is 4x4, and the v0, v1, v2 are 3D! You'll need to convert them to 4D 
 		// homogeneous vectors first (add a 1 in the w component).
 		// You can use the vec3ToVec4 function above to do this.
+
+
+
 		tv0 = Eigen::Vector4f::Zero();
 		tv1 = Eigen::Vector4f::Zero();
 		tv2 = Eigen::Vector4f::Zero();
@@ -187,6 +190,8 @@ int main()
 	// Subtask: Try making a 2D vector of ints using the template <> syntax.
 	// Is there a handy typedef for this too?
 
+	Eigen::Matrix<int, 2, 1> vec2;
+
 	// Matrices
 	// For the matrix sizes we'll commonly use (3x3 and 4x4) Eigen has typedefs for these too:
 	Eigen::Matrix3f myThreeByThreeMatrix;
@@ -220,6 +225,9 @@ int main()
 	// Subtask 3: Try multiplying myThreeByThreeMatrix by myInverse
 	// Print out the result.
 	// Is it what you would expect?
+
+	Eigen::Matrix3f test = myThreeByThreeMatrix * myInverse;
+	std::cout <<"Test here", test;
 
 	// Final advanced tip: the .block<>() function
 	// Eigen has a .block method that's super useful for getting or setting a
