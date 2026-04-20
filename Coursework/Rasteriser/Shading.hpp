@@ -12,6 +12,10 @@ Eigen::Vector3f reflect(const Eigen::Vector3f& incoming, const Eigen::Vector3f& 
 {
 	// *** YOUR CODE HERE ***
 	// replace this with the reflected vector.
+
+
+
+
 	return Eigen::Vector3f::Zero();
 	// *** END YOUR CODE ***
 }

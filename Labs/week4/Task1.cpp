@@ -116,11 +116,9 @@ void drawMesh(std::vector<unsigned char>& image, const Mesh& mesh,
 		// homogeneous vectors first (add a 1 in the w component).
 		// You can use the vec3ToVec4 function above to do this.
 
-
-
-		tv0 = Eigen::Vector4f::Zero();
-		tv1 = Eigen::Vector4f::Zero();
-		tv2 = Eigen::Vector4f::Zero();
+		tv0 = transform * vec3ToVec4(v0);
+		tv1 = transform * vec3ToVec4(v1);
+		tv2 = transform * vec3ToVec4(v2);
 
 		Eigen::Vector2f p0(tv0.x() * 250 + width / 2, -tv0.y() * 250 + height / 2);
 		Eigen::Vector2f p1(tv1.x() * 250 + width / 2, -tv1.y() * 250 + height / 2);
@@ -146,6 +144,11 @@ void drawMesh(std::vector<unsigned char>& image, const Mesh& mesh,
 Eigen::Matrix4f translationMatrix(const Eigen::Vector3f& t)
 {
 	// *** Your code here ***
+
+	Eigen::Matrix4f m = Eigen::Matrix4f::Identity();
+	m.block<3, 1>(0, 3) = t;
+	return m;
+
 	return Eigen::Matrix4f::Identity();
 }
 
@@ -153,7 +156,10 @@ Eigen::Matrix4f translationMatrix(const Eigen::Vector3f& t)
 Eigen::Matrix4f scaleMatrix(float s)
 {
 	// *** Your code here ***
-	return Eigen::Matrix4f::Identity();
+
+	Eigen::Matrix4f m = Eigen::Matrix4f::Identity();
+	m.block<3, 3>(0, 0) *= s;
+	return m;
 }
 
 // Implement this function that makes a rotation matrix around the y
