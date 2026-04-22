@@ -12,6 +12,11 @@ Eigen::Vector3f reflect(const Eigen::Vector3f& incoming, const Eigen::Vector3f& 
 {
 	// *** YOUR CODE HERE ***
 	// replace this with the reflected vector.
+	incoming.normalized();
+	normal.normalized();
+
+	Eigen::Matrix3f vecOutput = (incoming+2)*(incoming)
+
 	return Eigen::Vector3f::Zero();
 	// *** END YOUR CODE ***
 }
