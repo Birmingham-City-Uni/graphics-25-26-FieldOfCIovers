@@ -12,12 +12,17 @@ Eigen::Vector3f reflect(const Eigen::Vector3f& incoming, const Eigen::Vector3f& 
 {
 	// *** YOUR CODE HERE ***
 	// replace this with the reflected vector.
+	
+	int incomingDot = abs(incoming.dot(normal));
+
 	incoming.normalized();
 	normal.normalized();
 
-	Eigen::Matrix3f vecOutput = (incoming+2)*(incoming)
+	Eigen::Matrix3f vecOutput = incoming + (2 * incomingDot) * normal;
+	
 
-	return Eigen::Vector3f::Zero();
+
+	return vecOutput;
 	// *** END YOUR CODE ***
 }
 
@@ -35,16 +40,18 @@ float phongSpecularTerm(const Eigen::Vector3f& incomingLightDir, const Eigen::Ve
 {
 	// *** YOUR CODE HERE ***
 	// Find the reflected direction using the reflect function
-	Eigen::Vector3f reflectionDir = Eigen::Vector3f::Zero();
+	Eigen::Vector3f reflectionDir = reflect(incomingLightDir, normal);
 
 	// Find dot product between reflected and view directions.
-	float reflectDotNorm = 0.f;
+	float reflectDotNorm = reflectionDir.dot(viewDir);
 
 	// Make sure dot product is non-negative (if it's less than 0, set it to 0!)
-	reflectDotNorm = 0.f;
+	if (reflectDotNorm < 0) {
+		reflectDotNorm = 0;
+	}
 
 	// Finally, raise to specular exponent and return.
-	return 0.f;
+	return powf(reflectDotNorm, exponent);
 	// *** END YOUR CODE ***
 }
 
