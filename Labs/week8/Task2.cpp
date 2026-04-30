@@ -119,12 +119,13 @@ void drawTriangle(std::vector<uint8_t>& image, int width, int height,
 			// Interpolate to find the normal of this pixel (correct this version to be 
 			// perspective-correct).
 			// Tip: you don't need to worry about multiplying by depthP - you'll normalise this anyway!
-			Eigen::Vector3f normP = depthP * (t.norms[0] * b0 / depth0 + t.norms[1] * b1 / depth1 + t.norms[2] * b2 / depth2);
+			Eigen::Vector3f normP = (t.norms[0] * b0 / depth0 + t.norms[1] * b1 / depth1 + t.norms[2] * b2 / depth2);
+			normP.normalize();
 
 			// Interpolate to find the correct clip-space depth (correct this version to be perspective-correct)
 			// This won't make too much of a difference in this case, but technically this version does use slightly
 			// incorrect depths.
-			float depth = 0.f;
+			float depth = ;
 			// *** END YOUR CODE ***
 
 			int depthIdx = static_cast<int>(p.x()) + static_cast<int>(p.y()) * width;
