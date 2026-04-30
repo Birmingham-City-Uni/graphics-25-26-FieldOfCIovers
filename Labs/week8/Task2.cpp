@@ -106,20 +106,20 @@ void drawTriangle(std::vector<uint8_t>& image, int width, int height,
 			// Replace with perspective-correct, following the steps below
 
 			// Get the depths from the camera-space position of the 3 corners.
-			float depth0 = 0.f, depth1 = 0.f, depth2 = 0.f;
+			float depth0 = t.screen[0].z(), depth1 = t.screen[1].z(), depth2 = t.screen[2].z();
 			
 			// Work out the depth at the point P
-			float depthP = 0.f;
+			float depthP = powf((b0/depth0 + b1/depth1 + b2/depth2),-1);
 
 			// Interpolate to find the world-space position of this pixel (correct this version to be 
 			// perspective-correct).
 			// Don't forget to multiply by depthP!
-			Eigen::Vector3f worldP = Eigen::Vector3f::Zero();
+			Eigen::Vector3f worldP = depthP*(t.screen[0]*b0/depth0 + t.screen[1] * b1 / depth1 + t.screen[2] * b2 / depth2);
 
 			// Interpolate to find the normal of this pixel (correct this version to be 
 			// perspective-correct).
 			// Tip: you don't need to worry about multiplying by depthP - you'll normalise this anyway!
-			Eigen::Vector3f normP = Eigen::Vector3f::Zero();
+			Eigen::Vector3f normP = depthP * (t.norms[0] * b0 / depth0 + t.norms[1] * b1 / depth1 + t.norms[2] * b2 / depth2);
 
 			// Interpolate to find the correct clip-space depth (correct this version to be perspective-correct)
 			// This won't make too much of a difference in this case, but technically this version does use slightly

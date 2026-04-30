@@ -165,8 +165,8 @@ private:
 	Eigen::Vector3f _location;
 	Eigen::Vector3f _direction;
 	float _cosAngle;
-
 public:
+
 	SpotLight(const Eigen::Vector3f& intensity, const Eigen::Vector3f& location,
 		const Eigen::Vector3f& direction, float angle)
 		:Light(intensity), _location(location), _direction(direction), _cosAngle(cosf(angle))
