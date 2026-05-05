@@ -18,7 +18,7 @@ Eigen::Vector3f reflect(const Eigen::Vector3f& incoming, const Eigen::Vector3f& 
 	incoming.normalized();
 	normal.normalized();
 
-	Eigen::Matrix3f vecOutput = incoming + (2 * incomingDot) * normal;
+	Eigen::Vector3f vecOutput = incoming + (2 * incomingDot) * normal;
 	
 
 

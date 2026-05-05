@@ -8,6 +8,9 @@
 #include "Mesh.hpp"
 #include "Shading.hpp"
 
+enum ShadingMode {
+	PHONG,BLINN_PHONG
+};
 
 struct Triangle {
 	std::array<Eigen::Vector3f, 3> screen; // Coordinates of the triangle in screen space.
@@ -17,7 +20,7 @@ struct Triangle {
 };
 
 
-Eigen::Matrix4f projectionMatrix(int height, int width, float horzFov = 70.f * M_PI / 180.f, float zFar = 10.f, float zNear = 0.1f)
+Eigen::Matrix4f projectionMatrix(int height, int width, float horzFov = 70.f * M_PI / 180.f, float zFar = 100.f, float zNear = 0.1f)
 {
 	// ========= Subtask 1: Make a Projection Matrix ========
 	// *** YOUR CODE HERE ***
@@ -33,7 +36,7 @@ Eigen::Matrix4f projectionMatrix(int height, int width, float horzFov = 70.f * M
 
 	projection <<
 		1 / (tan(0.5 * horzFov)), 0, 0, 0,
-		0, 1 / (tan(0.f * vertFov)), 0, 0,
+		0, 1 / (tan(0.5f * vertFov)), 0, 0,
 		0, 0, zFar / (zFar - zNear), (-zFar * zNear) / (zFar - zNear),
 		0, 0, 1, 0;
 
@@ -61,7 +64,8 @@ void drawTriangle(std::vector<uint8_t>& image, int width, int height,
 	std::vector<float>& zBuffer,
 	const Triangle& t,
 	const std::vector<std::unique_ptr<Light>>& lights,
-	const std::vector<uint8_t>& albedoTexture, int texWidth, int texHeight)
+	const std::vector<uint8_t>& albedoTexture, int texWidth, int texHeight,
+	const Eigen::Vector3f &specularColor, float specularExponent,ShadingMode shadingMode,const Eigen::Vector3f&camWorldPos)
 {
 	int minX, minY, maxX, maxY;
 	findScreenBoundingBox(t, width, height, minX, minY, maxX, maxY);
@@ -175,9 +179,10 @@ void drawTriangle(std::vector<uint8_t>& image, int width, int height,
 			// *** END YOUR CODE ***
 
 
-			// ----- Lighting code ------
 			// Work out colour at this position.
 			Eigen::Vector3f color = Eigen::Vector3f::Zero();
+
+			Eigen::Vector3f viewDir = (camWorldPos - worldP).normalized();
 
 			// Iterate over lights, and sum to find colour.
 			for (auto& light : lights) {
@@ -189,19 +194,37 @@ void drawTriangle(std::vector<uint8_t>& image, int width, int height,
 
 				// We only need to do the following if the light isn't an ambient light.
 				if (light->getType() != Light::Type::AMBIENT) {
+					Eigen::Vector3f incomingLightDir = light->getDirection(worldP);
+
+					float specularTerm;
+					if (shadingMode == ShadingMode::PHONG) {
+						specularTerm = phongSpecularTerm(incomingLightDir, normP, viewDir, specularExponent);
+					}
+					else {
+						specularTerm = blinnPhongSpecularTerm(incomingLightDir, normP, viewDir, specularExponent);
+					}
+
+					Eigen::Vector3f specularOut = specularColor * specularTerm;
+					specularOut = coeffWiseMultiply(specularOut, lightIntensity);
 
 					// Take the dot product of the normal with the light direction.
-					float dotProd = normP.dot(-light->getDirection(worldP));
+					float dotProd = normP.dot(-incomingLightDir);
 
 					// We don't want negative light - if dot product less than 0, set it to 0.
 					dotProd = std::max(dotProd, 0.0f);
 
 					// Multiply the light intensity by the dot product.
-					lightIntensity *= dotProd;
-				}
+					Eigen::Vector3f diffuseOut = lightIntensity * dotProd;
+					diffuseOut = coeffWiseMultiply(diffuseOut, albedo);
 
-				// Now add the intensity times the albedo.
-				color += coeffWiseMultiply(lightIntensity, albedo);
+					color += specularOut;
+					//color += diffuseOut;
+					//color = (incomingLightDir + Eigen::Vector3f::Ones()) / 2;
+				}
+				else {
+					// Light is ambient - just multiply light intensity with albedo.
+					color += coeffWiseMultiply(lightIntensity, albedo);
+				}
 			}
 
 			Color c;
@@ -225,7 +248,8 @@ void drawMesh(std::vector<unsigned char>& image,
 	const Eigen::Matrix4f& modelToWorld,
 	const Eigen::Matrix4f& worldToClip,
 	const std::vector<std::unique_ptr<Light>>& lights,
-	int width, int height)
+	int width, int height,
+	const Eigen::Vector3f& specularColor, float specularExponent, ShadingMode shadingMode, const Eigen::Vector3f& camWorldPos)
 {
 	for (int i = 0; i < mesh.vFaces.size(); ++i) {
 
@@ -272,7 +296,7 @@ void drawMesh(std::vector<unsigned char>& image,
 
 		vClip0 /= vClip0.w();
 		vClip1 /= vClip1.w();
-		vClip1 /= vClip2.w();
+		vClip2 /= vClip2.w();
 
 		if (outsideClipBox(vClip0) || outsideClipBox(vClip1) || outsideClipBox(vClip2)) {
 			continue;
@@ -311,7 +335,7 @@ void drawMesh(std::vector<unsigned char>& image,
 		t.texs[1] = mesh.texs[mesh.tFaces[i][1]];
 		t.texs[2] = mesh.texs[mesh.tFaces[i][2]];
 
-		drawTriangle(image, width, height, zBuffer, t, lights, albedoTexture, texWidth, texHeight);
+		drawTriangle(image, width, height, zBuffer, t, lights, albedoTexture, texWidth, texHeight,specularColor,specularExponent,shadingMode,camWorldPos);
 	}
 }
 
@@ -342,16 +366,23 @@ int main()
 
 	// This matrix rotates the camera, tilting it down, then translates it up to make it look down on the scene.
 	// Once your code is working, try changing this to move the camera around!
-	Eigen::Matrix4f cameraToWorld = translationMatrix(Eigen::Vector3f(0.f, 0.8f, 0.f)) * rotateXMatrix(0.4f);
+	Eigen::Matrix4f cameraToWorld = translationMatrix(Eigen::Vector3f(0.f, 0.0f, 0.f)) * rotateZMatrix(-3.2637f);
 
 	// The main important task = set up the worldToCamera and worldToClip matrices here!
 	// Set up worldToCamera, based on cameraToWorld above
 	Eigen::Matrix4f worldToCamera = cameraToWorld.inverse();
 	// Set up worldToClip, using the projection and worldToCamera matrices
 	Eigen::Matrix4f worldToClip = projection * worldToCamera;
-	// *** END YOUR CODE ***
 
-	std::string bunnyFilename = "../models/stanford_bunny_texmapped.obj";
+	//Blinn-Phong Additions
+
+	Eigen::Vector3f specularColor = Eigen::Vector3f::Ones();
+	float specularExponent = 100.f;
+	ShadingMode mode = ShadingMode::BLINN_PHONG;
+	Eigen::Vector3f camWorldPos = (cameraToWorld * Eigen::Vector4f(0, 0, 0, 1)).block<3, 1>(0, 0);
+
+
+	std::string powerArmourBody = "../models/powerArmourBody.obj";
 
 	std::vector<std::unique_ptr<Light>> lights;
 	// I've already added an ambient light for you!
@@ -361,32 +392,20 @@ int main()
 	lights.emplace_back(new DirectionalLight(Eigen::Vector3f(0.4f, 0.4f, 0.4f), Eigen::Vector3f(1.f, 0.f, 0.0f)));
 	//lights.emplace_back(new SpotLight(Eigen::Vector3f(10.0f, 0.0f, 0.0f), Eigen::Vector3f(0.f, 1.f, 0.0f), Eigen::Vector3f(0, -1, 0), M_PI/8));
 
-	Mesh bunnyMesh = loadMeshFile(bunnyFilename);
+	Mesh bunnyMesh = loadMeshFile(powerArmourBody);
 
 
-	Eigen::Matrix4f bunnyTransform;
+	Eigen::Matrix4f powerArmourT;
 
-	std::vector<uint8_t> bunnyTexture;
-	unsigned int bunnyTexWidth, bunnyTexHeight;
-	lodepng::decode(bunnyTexture, bunnyTexWidth, bunnyTexHeight, "../models/stanford_bunny_albedo.png");
+	std::vector<uint8_t> powerArmourTex;
+	unsigned int powerArmourTexW, powerArmourTexH;
+	lodepng::decode(powerArmourTex, powerArmourTexW, powerArmourTexH, "../models/tnwPowerArmourB.png");
 
-	bunnyTransform = translationMatrix(Eigen::Vector3f(-1.0f, -1.0f, 3.f)) * rotateYMatrix(M_PI);
-	drawMesh(imageBuffer, zBuffer, bunnyMesh, bunnyTexture, bunnyTexWidth, bunnyTexHeight, bunnyTransform, worldToClip, lights, width, height);
-	bunnyTransform = translationMatrix(Eigen::Vector3f(-1.0f, -1.0f, 5.f)) * rotateYMatrix(M_PI);
-	drawMesh(imageBuffer, zBuffer, bunnyMesh, bunnyTexture, bunnyTexWidth, bunnyTexHeight, bunnyTransform, worldToClip, lights, width, height);
-	bunnyTransform = translationMatrix(Eigen::Vector3f(-1.0f, -1.0f, 7.f)) * rotateYMatrix(M_PI);
-	drawMesh(imageBuffer, zBuffer, bunnyMesh, bunnyTexture, bunnyTexWidth, bunnyTexHeight, bunnyTransform, worldToClip, lights, width, height);
-	bunnyTransform = translationMatrix(Eigen::Vector3f(1.0f, -1.0f, 3.f)) * rotateYMatrix(M_PI);
-	drawMesh(imageBuffer, zBuffer, bunnyMesh, bunnyTexture, bunnyTexWidth, bunnyTexHeight, bunnyTransform, worldToClip, lights, width, height);
-	bunnyTransform = translationMatrix(Eigen::Vector3f(1.0f, -1.0f, 5.f)) * rotateYMatrix(M_PI);
-	drawMesh(imageBuffer, zBuffer, bunnyMesh, bunnyTexture, bunnyTexWidth, bunnyTexHeight, bunnyTransform, worldToClip, lights, width, height);
-	bunnyTransform = translationMatrix(Eigen::Vector3f(1.0f, -1.0f, 7.f)) * rotateYMatrix(M_PI);
-	drawMesh(imageBuffer, zBuffer, bunnyMesh, bunnyTexture, bunnyTexWidth, bunnyTexHeight, bunnyTransform, worldToClip, lights, width, height);
+	powerArmourT = translationMatrix(Eigen::Vector3f(-1.0f, 5.0f, 25.f)) *rotateXMatrix(M_PI)* rotateYMatrix(M_PI);
+	drawMesh(imageBuffer, zBuffer, bunnyMesh, powerArmourTex, powerArmourTexW, powerArmourTexH, powerArmourT, worldToClip, lights, width, height, specularColor, specularExponent, mode, camWorldPos);
 
 	// For debug - draw point lights as colored circles so we can see where they are
 	drawPointLights(imageBuffer, width, height, lights);
-
-    // **** End lovely rasteriser code ****
 
     // Save the image
     int errorCode;
