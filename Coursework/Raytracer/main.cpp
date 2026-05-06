@@ -129,7 +129,7 @@ int main(int argc, char* argv[]) {
 
 	std::vector<uint8_t> gT;
 	unsigned int gTW, gTH;
-	lodepng::decode(gT, gTW, gTH, "../models/dirtwasteland01.png");
+	lodepng::decode(gT, gTW, gTH, "../models/wastelanddirt.png");
 
 	std::vector<uint8_t> sBT;
 	unsigned int sBTW, sBTH;
@@ -198,7 +198,7 @@ int main(int argc, char* argv[]) {
 	builder.addObject("../models/minigun.obj", &mgTShader, 4, { 8.75f,-4.f,   7.25f }, radians(-25), radians(150), radians(185));
 	builder.addObject("../models/ncrFlagMesh2.obj", &ncrFTShader, 4, { -14.5f,12.f,  65.f }, radians(180), radians(25), radians(-10));
 	builder.addObject("../models/ncrFlagPole.obj", &fPTShader, 4, { -20.f, 10.0f, 32.5f }, radians(180), radians(180), radians(0));
-	builder.addObject("../models/groundMesh.obj", &fPTShader, 1, { 0.f,   25.f,  500.f }, radians(180), radians(0), radians(0));
+	builder.addObject("../models/groundMesh.obj", &gTShader, 1, { 0.f,   25.f,  500.f }, radians(180), radians(0), radians(0));
 	builder.addObject("../models/sandbagMesh.obj", &sBTShader, 4, { -30.f, 5.f,   45.f }, radians(180), radians(90), radians(0));
 	builder.addObject("../models/sandbagMesh.obj", &sBTShader, 4, { -0.f,  7.5f,  110.f }, radians(180), radians(0), radians(0));
 	builder.addObject("../models/roadMesh.obj", &rTShader, 4, { -135.f,2.0f,  100.f }, radians(175), radians(135), radians(0));

@@ -417,7 +417,7 @@ int main()
 		loadObject("../models/minigun.obj","../models/minigun.png",{8.75f,-4.f,7.25f},radians(-25),radians(150),radians(185)),
 		loadObject("../models/ncrFlagMesh2.obj", "../models/nv_ncr_flag.png",{-14.5f,12.f,65.f},radians(180),radians(25),radians(-10)),
 		loadObject("../models/ncrFlagPole.obj","../models/nv_legionflag.png",{-20.f,10.0f,32.5f},radians(180),radians(180),radians(0)),
-		loadObject("../models/groundMesh.obj","../models/nv_legionflag.png",{0,25.f,500.f},radians(180),radians(0),radians(0)),
+		loadObject("../models/groundMesh.obj","../models/wastelanddirt.png",{0,25.f,500.f},radians(180),radians(0),radians(0)),
 		loadObject("../models/sandbagMesh.obj","../models/sandbag.png",{-30.f,5.f,45.f},radians(180),radians(90),radians(0)),
 		loadObject("../models/sandbagMesh.obj","../models/sandbag.png",{-0.f,7.5f,110.f},radians(180),radians(0),radians(0)),
 		loadObject("../models/roadMesh.obj","../models/roadwasteland01.png",{-135.f,2.0f,100.f},radians(175),radians(135),radians(0)),
