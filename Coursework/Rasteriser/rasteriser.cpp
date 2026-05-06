@@ -46,7 +46,7 @@ float radians(const float degrees) {
 	}
 }
 
-Eigen::Matrix4f projectionMatrix(int height, int width, float horzFov = 70.f * M_PI / 180.f, float zFar = 100.f, float zNear = 0.1f)
+Eigen::Matrix4f projectionMatrix(int height, int width, float horzFov = 70.f * M_PI / 180.f, float zFar = 1500.f, float zNear = 0.01f)
 {
 	// ========= Subtask 1: Make a Projection Matrix ========
 	// *** YOUR CODE HERE ***
@@ -376,7 +376,7 @@ int main()
 
 	// This matrix rotates the camera, tilting it down, then translates it up to make it look down on the scene.
 	// Once your code is working, try changing this to move the camera around!
-	Eigen::Matrix4f cameraToWorld = translationMatrix(Eigen::Vector3f(0.f, -10.0f, 0.f)) * rotateXMatrix(radians(-10.f)) * rotateZMatrix(radians(180.f)) * rotateYMatrix(radians(15.f));
+	Eigen::Matrix4f cameraToWorld = translationMatrix(Eigen::Vector3f(0.f, -10.0f, 2.f)) * rotateXMatrix(radians(-10.f)) * rotateZMatrix(radians(180.f)) * rotateYMatrix(radians(15.f));
 
 	// The main important task = set up the worldToCamera and worldToClip matrices here!
 	// Set up worldToCamera, based on cameraToWorld above
@@ -403,11 +403,22 @@ int main()
 	//Updated Render Helper Function
 	std::vector<RObject> objects = {
 		loadObject("../models/powerArmourBody.obj","../models/tnwPowerArmourB.png",{-1.0f,5.0f,25.f},radians(180),radians(180),radians(0)),
-		loadObject("../models/powerArmourHelmet.obj","../models/tnw_ncr_powerarmor_helmet.png",{-1.0f,2.f,35.f},radians(180),radians(180),radians(0)),
-		loadObject("../models/powerArmourGloves.obj","../models/t45_paglove_ncr_d.png",{-1.0f,10.f,35.f},radians(180),radians(180),radians(0)),
-		loadObject("../models/minigun.obj","../models/minigun.png",{-1.0f,5.0f,25.f},radians(180),radians(180),radians(0)),
-		loadObject("../models/ncrFlagMesh.obj", "../models/nv_ncr_flag.png",{-20.f,10.0f,30.f},radians(180),radians(180),radians(0)),
-		loadObject("../models/ncrFlagPole.obj","../models/nv_legionflag.png",{-20.f,10.0f,32.5f},radians(180),radians(180),radians(0))
+		loadObject("../models/powerArmourHelmet.obj","../models/tnw_ncr_powerarmor_helmet.png",{-1.0f,2.65f,39.f},radians(180),radians(180),radians(0)),
+		loadObject("../models/powerArmourGloves.obj","../models/t45_paglove_ncr_d.png",{0.5,2.5f,39.5f},radians(180),radians(-185),radians(0)),
+		loadObject("../models/minigun.obj","../models/minigun.png",{8.75f,-4.f,7.25f},radians(-25),radians(150),radians(185)),
+		loadObject("../models/ncrFlagMesh2.obj", "../models/nv_ncr_flag.png",{-14.5f,12.f,65.f},radians(180),radians(25),radians(-10)),
+		loadObject("../models/ncrFlagPole.obj","../models/nv_legionflag.png",{-20.f,10.0f,32.5f},radians(180),radians(180),radians(0)),
+		loadObject("../models/groundMesh.obj","../models/nv_legionflag.png",{0,25.f,500.f},radians(180),radians(0),radians(0)),
+		loadObject("../models/sandbagMesh.obj","../models/sandbag.png",{-30.f,5.f,45.f},radians(180),radians(90),radians(0)),
+		loadObject("../models/sandbagMesh.obj","../models/sandbag.png",{-0.f,7.5f,110.f},radians(180),radians(0),radians(0)),
+		loadObject("../models/roadMesh.obj","../models/roadwasteland01.png",{-135.f,2.0f,100.f},radians(175),radians(135),radians(0)),
+		loadObject("../models/ranchHouseM.obj","../models/minigun.png",{-700.f,30.0f,85.f},radians(175),radians(135),radians(0)),
+		loadObject("../models/ranchHouseM.obj","../models/minigun.png",{-625.f,10.0f,65.f},radians(175),radians(175),radians(0)),
+		loadObject("../models/goodspringHouseM.obj","../models/roadwasteland01.png",{350.f,24.0f,50.f},radians(174),radians(180),radians(0)),
+		loadObject("../models/watertowerMesh.obj","../models/tnwPowerArmourB.png",{375.f,24.0f,60.f},radians(174),radians(180),radians(0)),
+		loadObject("../models/skyMesh.obj","../models/tnw_ncr_powerarmor_helmet.png",{0.f,100.0f,0.f},radians(180),radians(180),radians(0)),
+		loadObject("../models/treeMesh.obj","../models/tnw_ncr_powerarmor_helmet.png",{47.5f,5.f,35.f},radians(180),radians(180),radians(0)),
+		loadObject("../models/treeLeavesMesh.obj","../models/tnw_ncr_powerarmor_helmet.png",{47.5f,5.f,35.f},radians(180),radians(180),radians(0))
 	};
 
 	for (const auto& obj : objects) {

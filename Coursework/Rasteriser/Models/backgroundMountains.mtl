@@ -1,0 +1,12 @@
+# Blender 5.1.1 MTL File: 'PowerArmourImport.blend'
+# www.blender.org
+
+newmtl Material.002
+Ns 0.000000
+Ka 0.640000 0.640000 0.640000
+Kd 0.039730 0.043834 0.110955
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 3
