@@ -19,6 +19,32 @@ struct Triangle {
 	std::array<Eigen::Vector2f, 3> texs; // Texture coordinates of the triangle corners.
 };
 
+struct RObject {
+	Mesh mesh;
+	std::vector<uint8_t> texture;
+	unsigned int texW, texH;
+	Eigen::Matrix4f transform;
+};
+
+RObject loadObject(const std::string& meshPath, const std::string& texturePath, Eigen::Vector3f position, float rotX = 0.f, float rotY = 0.f, float rotZ = 0.f) {
+	RObject obj;
+	obj.mesh = loadMeshFile(meshPath);
+	lodepng::decode(obj.texture, obj.texW, obj.texH, texturePath);
+	obj.transform = translationMatrix(position) * rotateXMatrix(rotX) * rotateYMatrix(rotY) * rotateZMatrix(rotZ);
+	return obj;
+}
+
+float radians(const float degrees) {
+
+	if (degrees == 0.0f) {
+		float radians = degrees;
+		return radians;
+	}
+	else {
+		float radians = degrees * (M_PI / 180);
+		return radians;;
+	}
+}
 
 Eigen::Matrix4f projectionMatrix(int height, int width, float horzFov = 70.f * M_PI / 180.f, float zFar = 100.f, float zNear = 0.1f)
 {
@@ -99,49 +125,29 @@ void drawTriangle(std::vector<uint8_t>& image, int width, int height,
 				continue;
 			}
 
-			Eigen::Vector3f worldP = t.verts[0] * b0 + t.verts[1] * b1 + t.verts[2] * b2;
+			float depth0 = t.screen[0].z(), depth1 = t.screen[1].z(), depth2 = t.screen[2].z();
 
-			// ========== Subtask 4: Z Buffering ==========
-			// Here we'll implement Z-buffering, using the zBuffer image and working out the 
-			// depth of this pixel in screen space.
-			// HINT: If you have trouble with this task, note that I've added code to save the z buffer to
-			// zBuffer.png. This is encoded so further away objects are lighter in color. It should match
-			// the example_zBuffer.png image if your code is working!
-			// *** YOUR CODE HERE ***
+			float depthP = powf((b0 / depth0 + b1 / depth1 + b2 / depth2), -1);
 
-			// First, work out the depth of this location in screen space. 
-			// We saved the clip space z values in t.screen[0].z(), t.screen[1].z() and t.screen[2].z.
-			// Use barycentric interpolation on these to work out the depth of this pixel.
-			float depth = t.screen[0].z() * b0 + t.screen[1].z() * b1 + t.screen[2].z() * b2;
+			Eigen::Vector3f worldP = depthP * (t.verts[0] * b0 / depth0 + t.verts[1] * b1 / depth1 + t.verts[2] * b2 / depth2);
+
+			Eigen::Vector3f normP = (t.norms[0] * b0 / depth0 + t.norms[1] * b1 / depth1 + t.norms[2] * b2 / depth2);
+			normP.normalize();
+			
+			float depth = depthP * (depth0 * b0 / depth0 + depth1 * b1 / depth1 + depth2 * b2 / depth2);
 
 			// Work out where to sample in the zBuffer. Remember the zBuffer has only one channel,
 			// so your index should be based on the pixel's x and y locations, and the width of the 
 			// z buffer only.
-			int depthIdx = y * width + x;
-
-			if (depth > zBuffer[depthIdx]) {
-				continue;
-			}
-			zBuffer[depthIdx] = depth;
+			
 
 			// If your depth is bigger than the current depth, skip drawing this pixel.
 			// Otherwise, replace the zBuffer value at depthIdx with this depth.
-			// ADD YOUR OWN CODE TO DO THIS HERE
 
-			// *** END YOUR CODE ***
-
-			Eigen::Vector3f normP = t.norms[0] * b0 + t.norms[1] * b1 + t.norms[2] * b2;
-			normP.normalize();
-
-
-
-			// ========== Subtask 5: Texture Mapping ===========
-			// Here we'll actually implement the texture mapping! Follow the steps below, implementing each
-			// stage in turn.
-			// *** YOUR CODE HERE ***
+			
 			// Add code to calculate the texture coordinates corresponding to P, texP.
 			// Use barycentric interpolation!
-			Eigen::Vector2f texP = t.texs[0] * b0 + t.texs[1] * b1 + t.texs[2] * b2;
+			Eigen::Vector2f texP = depthP * (t.texs[0] * b0 / depth0 + t.texs[1] * b1 / depth1 + t.texs[2] * b2 / depth2);
 
 			// Convert this coordinate to a point in texture space
 			// To do so, multiply by the texWidth and texHeight to get to the correct range.
@@ -165,24 +171,28 @@ void drawTriangle(std::vector<uint8_t>& image, int width, int height,
 
 			Color texColor = getPixel(albedoTexture, texC, texR, texWidth, texHeight);
 
+			if (texColor.a < 1) {
+				continue;
+			}
+
 			Eigen::Vector3f albedo(texColor.r / 255.f, texColor.g / 255.f, texColor.b / 255.0f);
 
-			// Get the value from the texture (hint: use the getPixel function on the albedoTexture).
-
-
-			// Convert it into an Eigen::Vector3f as an albedo
-			// (Optional bonus task, if you checked out the slides on gamma correction:
-			// gamma correct this colour, so the texture doesn't appear overly bright.
-			// should you raise to the power 1/2.2, or 2.2?)
-
-
-			// *** END YOUR CODE ***
-
-
-			// Work out colour at this position.
 			Eigen::Vector3f color = Eigen::Vector3f::Zero();
 
 			Eigen::Vector3f viewDir = (camWorldPos - worldP).normalized();
+
+			int depthIdx = y * width + x;
+
+			if (depth > zBuffer[depthIdx]) {
+				continue;
+			}
+
+			if (texColor.a < 1) {
+				continue;
+			}
+
+			zBuffer[depthIdx] = depth;
+
 
 			// Iterate over lights, and sum to find colour.
 			for (auto& light : lights) {
@@ -366,7 +376,7 @@ int main()
 
 	// This matrix rotates the camera, tilting it down, then translates it up to make it look down on the scene.
 	// Once your code is working, try changing this to move the camera around!
-	Eigen::Matrix4f cameraToWorld = translationMatrix(Eigen::Vector3f(0.f, 0.0f, 0.f)) * rotateZMatrix(-3.2637f);
+	Eigen::Matrix4f cameraToWorld = translationMatrix(Eigen::Vector3f(0.f, -10.0f, 0.f)) * rotateXMatrix(radians(-10.f)) * rotateZMatrix(radians(180.f)) * rotateYMatrix(radians(15.f));
 
 	// The main important task = set up the worldToCamera and worldToClip matrices here!
 	// Set up worldToCamera, based on cameraToWorld above
@@ -381,9 +391,6 @@ int main()
 	ShadingMode mode = ShadingMode::BLINN_PHONG;
 	Eigen::Vector3f camWorldPos = (cameraToWorld * Eigen::Vector4f(0, 0, 0, 1)).block<3, 1>(0, 0);
 
-
-	std::string powerArmourBody = "../models/powerArmourBody.obj";
-
 	std::vector<std::unique_ptr<Light>> lights;
 	// I've already added an ambient light for you!
 	lights.emplace_back(new AmbientLight(Eigen::Vector3f(0.1f, 0.1f, 0.1f)));
@@ -392,17 +399,20 @@ int main()
 	lights.emplace_back(new DirectionalLight(Eigen::Vector3f(0.4f, 0.4f, 0.4f), Eigen::Vector3f(1.f, 0.f, 0.0f)));
 	//lights.emplace_back(new SpotLight(Eigen::Vector3f(10.0f, 0.0f, 0.0f), Eigen::Vector3f(0.f, 1.f, 0.0f), Eigen::Vector3f(0, -1, 0), M_PI/8));
 
-	Mesh bunnyMesh = loadMeshFile(powerArmourBody);
+	
+	//Updated Render Helper Function
+	std::vector<RObject> objects = {
+		loadObject("../models/powerArmourBody.obj","../models/tnwPowerArmourB.png",{-1.0f,5.0f,25.f},radians(180),radians(180),radians(0)),
+		loadObject("../models/powerArmourHelmet.obj","../models/tnw_ncr_powerarmor_helmet.png",{-1.0f,2.f,35.f},radians(180),radians(180),radians(0)),
+		loadObject("../models/powerArmourGloves.obj","../models/t45_paglove_ncr_d.png",{-1.0f,10.f,35.f},radians(180),radians(180),radians(0)),
+		loadObject("../models/minigun.obj","../models/minigun.png",{-1.0f,5.0f,25.f},radians(180),radians(180),radians(0)),
+		loadObject("../models/ncrFlagMesh.obj", "../models/nv_ncr_flag.png",{-20.f,10.0f,30.f},radians(180),radians(180),radians(0)),
+		loadObject("../models/ncrFlagPole.obj","../models/nv_legionflag.png",{-20.f,10.0f,32.5f},radians(180),radians(180),radians(0))
+	};
 
-
-	Eigen::Matrix4f powerArmourT;
-
-	std::vector<uint8_t> powerArmourTex;
-	unsigned int powerArmourTexW, powerArmourTexH;
-	lodepng::decode(powerArmourTex, powerArmourTexW, powerArmourTexH, "../models/tnwPowerArmourB.png");
-
-	powerArmourT = translationMatrix(Eigen::Vector3f(-1.0f, 5.0f, 25.f)) *rotateXMatrix(M_PI)* rotateYMatrix(M_PI);
-	drawMesh(imageBuffer, zBuffer, bunnyMesh, powerArmourTex, powerArmourTexW, powerArmourTexH, powerArmourT, worldToClip, lights, width, height, specularColor, specularExponent, mode, camWorldPos);
+	for (const auto& obj : objects) {
+		drawMesh(imageBuffer, zBuffer, obj.mesh, obj.texture, obj.texW, obj.texH, obj.transform, worldToClip, lights, width, height, specularColor, specularExponent, mode, camWorldPos);
+	}
 
 	// For debug - draw point lights as colored circles so we can see where they are
 	drawPointLights(imageBuffer, width, height, lights);
