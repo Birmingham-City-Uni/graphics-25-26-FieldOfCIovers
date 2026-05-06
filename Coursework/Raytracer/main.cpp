@@ -29,6 +29,21 @@ nlohmann::json loadConfig(const std::string& filename)
 	return config;
 }
 
+struct RObject {
+	Mesh mesh;
+	std::vector<uint8_t> texture;
+	unsigned int texW, texH;
+	Eigen::Matrix4f transform;
+};
+
+RObject loadObject(const std::string& meshPath, const std::string& texturePath, Eigen::Vector3f position, float rotX = 0.f, float rotY = 0.f, float rotZ = 0.f) {
+	RObject obj;
+	obj.mesh = scene.renderables.push_back(std::make_shared<BVHNode>(meshPath);
+	lodepng::decode(obj.texture, obj.texW, obj.texH, texturePath);
+	obj.transform = makeTranslationMatrix(position) * rotateX(rotX) * rotateY(rotY) * rotateZ(rotZ);
+	return obj;
+}
+
 /// <summary>
 /// Load an Eigen Vector3f from a config file.
 /// Call as for example loadVec3FromConfig(config["myVector3"]);
@@ -82,7 +97,10 @@ int main(int argc, char* argv[]) {
 	// Optional code: here's how to add the spot mesh to the scene, using a BVH
 	// Try enabling this and comparing it to the non-BVH version below!
 	Model spotModel("../models/spot.obj");
-	scene.renderables.push_back(std::make_shared<BVHNode>(spotModel, &spotShader, 4, rotateY(M_PI / 4.0f)));
+
+
+
+	, &spotShader, 4, rotateY(M_PI / 4.0f)));
 
 	// Here's how to add the mesh without using the BVH.
 	// Try comparing performance to the BVH version above.
