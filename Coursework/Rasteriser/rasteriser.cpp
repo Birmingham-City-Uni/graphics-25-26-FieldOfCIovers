@@ -29,7 +29,14 @@ struct RObject {
 RObject loadObject(const std::string& meshPath, const std::string& texturePath, Eigen::Vector3f position, float rotX = 0.f, float rotY = 0.f, float rotZ = 0.f) {
 	RObject obj;
 	obj.mesh = loadMeshFile(meshPath);
-	lodepng::decode(obj.texture, obj.texW, obj.texH, texturePath);
+	unsigned error = lodepng::decode(obj.texture, obj.texW, obj.texH, texturePath);
+	if (error) {
+		std::cerr << "Texture load failed for " << texturePath
+			<< ": " << lodepng_error_text(error) << std::endl;
+		// Set safe fallback dimensions
+		obj.texW = 1; obj.texH = 1;
+		obj.texture = { 255, 0, 255, 255 }; // magenta fallback
+	}
 	obj.transform = translationMatrix(position) * rotateXMatrix(rotX) * rotateYMatrix(rotY) * rotateZMatrix(rotZ);
 	return obj;
 }
@@ -414,13 +421,13 @@ int main()
 		loadObject("../models/sandbagMesh.obj","../models/sandbag.png",{-30.f,5.f,45.f},radians(180),radians(90),radians(0)),
 		loadObject("../models/sandbagMesh.obj","../models/sandbag.png",{-0.f,7.5f,110.f},radians(180),radians(0),radians(0)),
 		loadObject("../models/roadMesh.obj","../models/roadwasteland01.png",{-135.f,2.0f,100.f},radians(175),radians(135),radians(0)),
-		loadObject("../models/ranchHouseM.obj","../models/nv_noso_ranchhouse02.png",{-700.f,30.0f,85.f},radians(175),radians(135),radians(0)),
-		//loadObject("../models/ranchHouseM.obj","../models/nv_noso_ranchhouse02.png",{-625.f,10.0f,65.f},radians(175),radians(175),radians(0)),
-		//loadObject("../models/goodspringHouseM.obj","../models/nv_goodhome01_d.png",{350.f,24.0f,50.f},radians(174),radians(180),radians(0)),
-		//loadObject("../models/watertowerMesh.obj","../models/watertower01.png",{375.f,24.0f,60.f},radians(174),radians(180),radians(0)),
-		//loadObject("../models/skyMesh.obj","../models/WesternSky3.png",{0.f,100.0f,0.f},radians(180),radians(180),radians(0)),
-		//loadObject("../models/treeMesh.obj","../models/Vurt_Jbark02.png",{47.5f,5.f,35.f},radians(180),radians(180),radians(0)),
-		//loadObject("../models/treeLeavesMesh.obj","../models/Vurt_JTreeTop42x.png",{47.5f,5.f,35.f},radians(180),radians(180),radians(0))
+		loadObject("../models/ranchHouseM.obj","../models/ranchShack.png",{-700.f,30.0f,85.f},radians(175),radians(135),radians(0)),
+		loadObject("../models/ranchHouseM.obj","../models/ranchShack.png",{-625.f,10.0f,65.f},radians(175),radians(175),radians(0)),
+		loadObject("../models/goodspringHouseM.obj","../models/goodShack.png",{350.f,24.0f,50.f},radians(174),radians(180),radians(0)),
+		loadObject("../models/watertowerMesh.obj","../models/watertower01.png",{375.f,24.0f,60.f},radians(174),radians(180),radians(0)),
+		loadObject("../models/skyMesh.obj","../models/skyTex.png",{0.f,100.0f,0.f},radians(180),radians(180),radians(0)),
+		loadObject("../models/treeMesh.obj","../models/Vurt_Jbark02.png",{47.5f,5.f,35.f},radians(180),radians(180),radians(0)),
+		loadObject("../models/treeLeavesMesh.obj","../models/Vurt_JTreeTop42x.png",{47.5f,5.f,35.f},radians(180),radians(180),radians(0))
 	};
 
 	for (const auto& obj : objects) {
