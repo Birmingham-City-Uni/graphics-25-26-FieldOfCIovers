@@ -29,20 +29,39 @@ nlohmann::json loadConfig(const std::string& filename)
 	return config;
 }
 
-struct RObject {
-	Mesh mesh;
-	std::vector<uint8_t> texture;
-	unsigned int texW, texH;
-	Eigen::Matrix4f transform;
-};
+float radians(const float degrees) {
 
-RObject loadObject(const std::string& meshPath, const std::string& texturePath, Eigen::Vector3f position, float rotX = 0.f, float rotY = 0.f, float rotZ = 0.f) {
-	RObject obj;
-	obj.mesh = scene.renderables.push_back(std::make_shared<BVHNode>(meshPath);
-	lodepng::decode(obj.texture, obj.texW, obj.texH, texturePath);
-	obj.transform = makeTranslationMatrix(position) * rotateX(rotX) * rotateY(rotY) * rotateZ(rotZ);
-	return obj;
+	if (degrees == 0.0f) {
+		float radians = degrees;
+		return radians;
+	}
+	else {
+		float radians = degrees * (M_PI / 180);
+		return radians;;
+	}
 }
+
+struct ModelSpawner {
+	Scene& scene;
+	std::vector<std::shared_ptr<Model>> models;
+
+	std::shared_ptr<BVHNode> addObject(const std::string& meshPath, const Shader* shader, int bvhDepth = 4, Eigen::Vector3f position = Eigen::Vector3f::Zero(), float rotX = 0.f, float rotY = 0.f, float rotZ = 0.f) {
+
+		models.emplace_back(std::make_shared<Model>(meshPath.c_str()));
+		std::shared_ptr <Model>& model = models.back();
+
+		if (model->nfaces() == 0) {
+			std::cerr << "WARNING: Model has no faces, skipping: " << meshPath << std::endl;
+			models.pop_back();
+			return nullptr;
+		}
+
+		Eigen::Matrix4f transform = makeTranslationMatrix(position) * rotateX(rotX) * rotateY(rotY) * rotateZ(rotZ);
+		auto node = std::make_shared<BVHNode>(*model, shader, bvhDepth, transform);
+		scene.renderables.push_back(node);
+		return node;
+	}
+};
 
 /// <summary>
 /// Load an Eigen Vector3f from a config file.
@@ -61,11 +80,17 @@ int main(int argc, char* argv[]) {
 	const int pixHeight = config["pixHeight"], pixWidth = config["pixWidth"];
 	const int nChannels = 4;
 
+	Eigen::Matrix4f camRot = rotateX(radians(-10.f)) * rotateY(radians(-15.f));
+	Eigen::Vector3f cameraPos(0.f, -10.0f, 2.f);
+	Eigen::Vector3f cameraForward = camRot.block<3, 3>(0, 0) * Eigen::Vector3f(0.f, 0.f, 1.f);
+	Eigen::Vector3f cameraUp = camRot.block<3, 3>(0, 0) * Eigen::Vector3f(0.f, -1.f, 0.f);
+
+
 	// *** Set up camera and output image ***
 	Camera cam(
-		loadVec3FromConfig(config["cameraPos"]),
-		loadVec3FromConfig(config["cameraForward"]),
-		loadVec3FromConfig(config["cameraUp"]),
+		cameraPos,
+		cameraForward,
+		cameraUp,
 		pixWidth, pixHeight,
 		config["cameraFov"]);
 
@@ -78,16 +103,84 @@ int main(int argc, char* argv[]) {
 		aqua(0.f, .8f, .8f),
 		lavender(178.f / 255.f, 164.f / 255.f, 212.f / 255.f);
 
-	// *** Load shaders and textures ***
-	std::vector<uint8_t> spotTexture;
-	unsigned int width, height;
-	lodepng::decode(spotTexture, width, height, "../models/spot.png");
+	std::vector<uint8_t> pABT;
+	unsigned int pABTW, pABTH;
+	lodepng::decode(pABT, pABTW, pABTH, "../models/tnwPowerArmourB.png");
+
+	std::vector<uint8_t> pAHT;
+	unsigned int pAHTW, pAHTH;
+	lodepng::decode(pAHT, pAHTW, pAHTH, "../models/tnw_ncr_powerarmor_helmet.png");
+
+	std::vector<uint8_t> pAGT;
+	unsigned int pAGTW, pAGTH;
+	lodepng::decode(pAGT, pAGTW, pAGTH, "../models/t45_paglove_ncr_d.png");
+
+	std::vector<uint8_t> mgT;
+	unsigned int mgTW, mgTH;
+	lodepng::decode(mgT, mgTW, mgTH, "../models/minigun.png");
+
+	std::vector<uint8_t> ncrFT;
+	unsigned int ncrFTW, ncrFTH;
+	lodepng::decode(ncrFT, ncrFTW, ncrFTH, "../models/nv_ncr_flag.png");
+
+	std::vector<uint8_t> fPT;
+	unsigned int fPTW, fPTH;
+	lodepng::decode(fPT, fPTW, fPTH, "../models/nv_legionflag.png");
+
+	std::vector<uint8_t> gT;
+	unsigned int gTW, gTH;
+	lodepng::decode(gT, gTW, gTH, "../models/nv_legionflag.png");
+
+	std::vector<uint8_t> sBT;
+	unsigned int sBTW, sBTH;
+	lodepng::decode(sBT, sBTW, sBTH, "../models/sandbag.png");
+
+	std::vector<uint8_t> rT;
+	unsigned int rTW, rTH;
+	lodepng::decode(rT, rTW, rTH, "../models/roadwasteland01.png");
+
+	std::vector<uint8_t> rHT;
+	unsigned int rHTW, rHTH;
+	lodepng::decode(rHT, rHTW, rHTH, "../models/nv_noso_ranchhouse02.png");
+
+	std::vector<uint8_t> gSHT;
+	unsigned int gSHTW, gSHTH;
+	lodepng::decode(gSHT, gSHTW, gSHTH, "../models/nv_goodhome01_d.png");
+
+	std::vector<uint8_t> sST;
+	unsigned int sSTW, sSTH;
+	lodepng::decode(sST, sSTW, sSTH, "../models/WesternSky3.png");
+
+	std::vector<uint8_t> tBT;
+	unsigned int tBTW, tBTH;
+	lodepng::decode(tBT, tBTW, tBTH, "../models/Vurt_Jbark02.png");
+
+	std::vector<uint8_t> tLT;
+	unsigned int tLTW, tLTH;
+	lodepng::decode(tLT, tLTW, tLTH, "../models/Vurt_JTreeTop42x.png");
+
+
+	//All the Lambert Shaders
+	TexturedLambertianShader pABTShader(&pABT, pABTW, pABTH);
+	TexturedLambertianShader pAHTShader(&pAHT, pAHTW, pAHTH);
+	TexturedLambertianShader pAGTShader(&pAGT, pAGTW, pAGTH);
+	TexturedLambertianShader mgTShader(&mgT, mgTW, mgTH);
+	TexturedLambertianShader ncrFTShader(&ncrFT, ncrFTW, ncrFTH);
+	TexturedLambertianShader fPTShader(&fPT, fPTW, fPTH);
+	TexturedLambertianShader gTShader(&gT, gTW, gTH);
+	TexturedLambertianShader sBTShader(&sBT, sBTW, sBTH);
+	TexturedLambertianShader rTShader(&rT, rTW, rTH);
+	TexturedLambertianShader rHTShader(&rHT, rHTW, rHTH);
+	TexturedLambertianShader gSHTShader(&gSHT, gSHTW, gSHTH);
+	TexturedLambertianShader sSTShader(&sST, sSTW, sSTH);
+	TexturedLambertianShader tBTShader(&tBT, tBTW, tBTH);
+	TexturedLambertianShader tLTShader(&tLT, tLTW, tLTH);
+
 
 	LambertianShader redLambertianShader(red);
 	PhongShader bluePlasticShader(blue, Eigen::Vector3f(1.f, 1.f, 1.f), 100.f);
 	LambertianShader aquaLambertianShader(aqua);
 	LambertianShader lavenderLambertianShader(lavender);
-	TexturedLambertianShader spotShader(&spotTexture, width, height);
 	MirrorShader mirrorShader;
 	TexCoordTestShader texCoordTestShader;
 
@@ -96,24 +189,33 @@ int main(int argc, char* argv[]) {
 
 	// Optional code: here's how to add the spot mesh to the scene, using a BVH
 	// Try enabling this and comparing it to the non-BVH version below!
-	Model spotModel("../models/spot.obj");
 
+	ModelSpawner builder{ scene };
 
+	builder.addObject("../models/powerArmourBody.obj", &pABTShader, 4, { -1.0f, 5.0f,  25.f }, radians(180), radians(180), radians(0));
+	builder.addObject("../models/powerArmourHelmet.obj", &pAHTShader, 4, { -1.0f, 2.65f, 39.f }, radians(180), radians(180), radians(0));
+	builder.addObject("../models/powerArmourGloves.obj", &pAGTShader, 4, { 0.5f,  2.5f,  39.5f }, radians(180), radians(-185), radians(0));
+	builder.addObject("../models/minigun.obj", &mgTShader, 4, { 8.75f,-4.f,   7.25f }, radians(-25), radians(150), radians(185));
+	builder.addObject("../models/ncrFlagMesh2.obj", &ncrFTShader, 4, { -14.5f,12.f,  65.f }, radians(180), radians(25), radians(-10));
+	builder.addObject("../models/ncrFlagPole.obj", &fPTShader, 4, { -20.f, 10.0f, 32.5f }, radians(180), radians(180), radians(0));
+	builder.addObject("../models/groundMesh.obj", &gTShader, 1, { 0.f,   25.f,  500.f }, radians(180), radians(0), radians(0));
+	builder.addObject("../models/sandbagMesh.obj", &sBTShader, 4, { -30.f, 5.f,   45.f }, radians(180), radians(90), radians(0));
+	builder.addObject("../models/sandbagMesh.obj", &sBTShader, 4, { -0.f,  7.5f,  110.f }, radians(180), radians(0), radians(0));
+	builder.addObject("../models/roadMesh.obj", &rTShader, 4, { -135.f,2.0f,  100.f }, radians(175), radians(135), radians(0));
+	//builder.addObject("../models/ranchHouseM.obj", &pABTShader, 4, { -700.f,30.0f, 85.f }, radians(175), radians(135), radians(0));
+	//builder.addObject("../models/ranchHouseM.obj", &rHTShader, 4, { -625.f,10.0f, 65.f }, radians(175), radians(175), radians(0));
+	//builder.addObject("../models/goodspringHouseM.obj", &gSHTShader, 4, { 350.f, 24.0f, 50.f }, radians(174), radians(180), radians(0));
+	//builder.addObject("../models/skyMesh.obj", &sSTShader, 4, { 0.f,   100.0f,0.f }, radians(180), radians(180), radians(0));
+	//builder.addObject("../models/treeMesh.obj", &tBTShader, 4, { 47.5f, 5.f,   35.f }, radians(180), radians(180), radians(0));
+	//builder.addObject("../models/treeLeavesMesh.obj", &tLTShader, 4, { 47.5f, 5.f,   35.f }, radians(180), radians(180), radians(0));
 
-	, &spotShader, 4, rotateY(M_PI / 4.0f)));
-
-	// Here's how to add the mesh without using the BVH.
-	// Try comparing performance to the BVH version above.
-	//Model spotModel("../models/spot.obj");
-	//scene.renderables.push_back(std::make_shared<Mesh>(&spotShader, &spotModel));
-	//scene.renderables.back()->modelToWorld(rotateY(M_PI / 4.0f));
 
 	// *** Add lights to scene ***
-	Eigen::Vector3f ambientLight(.1f, .1f, .1f);
+	Eigen::Vector3f ambientLight(.8f, .8f, .8f);
 
 	std::vector<std::unique_ptr<Light>> lightSources;
-	lightSources.push_back(std::make_unique<PointLight>(Eigen::Vector3f(-1.f, 3.f, -1.f), 3.f * Eigen::Vector3f(1.f, 1.f, 1.f)));
-	lightSources.push_back(std::make_unique<DirectionalLight>(Eigen::Vector3f(0.f, -1.f, 1.f), .5f * Eigen::Vector3f(1.f, 1.f, 1.f)));
+//	lightSources.push_back(std::make_unique<PointLight>(Eigen::Vector3f(-1.f, 3.f, -1.f), 3.f * Eigen::Vector3f(1.f, 1.f, 1.f)));
+	lightSources.push_back(std::make_unique<DirectionalLight>(Eigen::Vector3f(0.f, -1.f, 1.f), 4.f * Eigen::Vector3f(1.f, 1.f, 1.f)));
 
 	// *** Render the scene ***
 
